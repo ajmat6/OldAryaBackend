@@ -11,20 +11,14 @@ const { userMiddleware, adminMiddleware } = require('../middleware/userMiddlewar
 
 // API end point for signup: POST Request -> to create an account:
 router.post('/signup', validateSignupRequest, isRequestValidated, async (req,res) => { /// using validateRequest(array) and isRequestValidated as midddleware defined in validators folder
-    
-    // Finding the user:
     try
     {
         const alreadyUser = await User.findOne({email: req.body.email})
         
-        // if user already exist then show this message:
         if(alreadyUser) return res.status(400).json({
             message: "User already exist"
         })
     
-        // if user is not present then create its account:
-    
-        // Destructuring and extracting elements from the req.body:
         const {
             name,
             username,
@@ -45,7 +39,6 @@ router.post('/signup', validateSignupRequest, isRequestValidated, async (req,res
             role: 'user'
         })
     
-        // Saving the document(a particular of the users collection) in the DB:
         _user.save();
 
         //Token data that we want to send to the user (here id of the user)
@@ -222,6 +215,32 @@ router.post('/user/update', fetchuser, userMiddleware, async (req, res) => {
                 }
             })
         }
+
+        else if(req.file)
+        {
+            const userId = req.user.id;
+            const updateFields = {
+                profilePicture: `${process.env.PICURL}/public/${req.file.filename}`
+            };
+
+            const updatedInfo = await User.findOneAndUpdate({_id: userId}, {
+                "$set": updateFields
+            }, {new: true})
+
+            res.status(200).json({
+                user: {
+                    firstName: updatedInfo.firstName,
+                    lastName: updatedInfo.lastName,
+                    email: updatedInfo.email,
+                    role: updatedInfo.role,
+                    fullname: updatedInfo.fullname,
+                    _id: updatedInfo._id,
+                    gender: updatedInfo.gender ? updatedInfo.gender : "",
+                    contact: updatedInfo.contact ? updatedInfo.contact : "",
+                    profilePic: updateInfo.profilePicture
+                }
+            })
+        }
     
         else
         {
@@ -233,6 +252,11 @@ router.post('/user/update', fetchuser, userMiddleware, async (req, res) => {
         console.log(error.message);
         res.status(500).send("Some Internal Server Error Occured! Please try again after some times");    
     }
+})
+
+router.post('/google/login', async (req, res) => {
+    const {idToken} = req.body;
+    console.log(idToken);
 })
 
 
