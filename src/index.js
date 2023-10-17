@@ -3,11 +3,13 @@ const mongoose = require('mongoose');
 const app = express();
 const env = require('dotenv');
 const cors = require('cors');
+const path = require('path')
 
 env.config();
 
 // Routes import:
 const userRoutes = require('./routes/auth');
+const notesRoutes = require('./routes/notes')
 
 mongoose.connect(
     `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@cluster0.kfhqqjb.mongodb.net/?retryWrites=true&w=majority`,
@@ -22,8 +24,10 @@ mongoose.connect(
 
 app.use(express.json());
 app.use(cors());
+app.use('/public', express.static(path.join(__dirname, 'uploads')))
 
 app.use('/oldarya', userRoutes);
+app.use('/oldarya', notesRoutes);
 
 app.listen(process.env.PORT, () => {
     console.log(`Server running on port ${process.env.PORT}`)
