@@ -17,6 +17,10 @@ const NotesSchema = new mongoose.Schema({
         required: true
     },
 
+    parentId: {
+        type: String,
+    },
+
     notesLink: {
         type: String,
         required: true

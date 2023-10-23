@@ -20,6 +20,11 @@ router.post('/notes/add', fetchuser, adminMiddleware, upload.single('notesImage'
         {
             payload.notesImage = `${req.file.filename}`
         }
+
+        if(req.body.parentId)
+        {
+            payload.parentId = req.body.parentId
+        }
     
         // check if the topic already exist:
         const alreadyNotes = await Notes.findOne({title: req.body.title});
@@ -41,9 +46,40 @@ router.post('/notes/add', fetchuser, adminMiddleware, upload.single('notesImage'
 router.get('/getnotes', fetchuser, userMiddleware, async (req, res) => {
     try
     {
+        const allNotesFrontTopics = await Notes.find({parentId: null});
+        if(allNotesFrontTopics) return res.status(200).json(allNotesFrontTopics);
+        else return res.status(400).json({message: "No Notes Topics Found"});
+    }
+    catch (error)
+    {
+        console.log(error.message);
+        res.status(500).send("Some Internal Server Error Occured! Please try again after some times");    
+    }
+})
+
+router.get('/getnotes/admin', fetchuser, adminMiddleware, async (req, res) => {
+    try
+    {
         const allNotesFrontTopics = await Notes.find({});
         if(allNotesFrontTopics) return res.status(200).json(allNotesFrontTopics);
         else return res.status(400).json({message: "No Notes Topics Found"});
+    }
+    catch (error)
+    {
+        console.log(error.message);
+        res.status(500).send("Some Internal Server Error Occured! Please try again after some times");    
+    }
+})
+
+// get notes by parentid:
+router.get('/getnotes/:parent', fetchuser, userMiddleware, async (req, res) => {
+    try
+    {
+        const {parent} = req.params;
+
+        const allNotesByParent = await Notes.find({parentId: parent});
+        if(allNotesByParent) return res.status(200).json(allNotesByParent);
+        else return res.status(400).json({message: "No Notes Found For This Topic. Please Do share If you Have!"})
     }
     catch (error)
     {

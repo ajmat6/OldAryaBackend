@@ -166,61 +166,65 @@ router.post('/user/update', fetchuser, userMiddleware, async (req, res) => {
     try
     {
         const {payload} = req.body;
+        console.log(req.body, req.file)
         
-        if(payload.info)
+        if(payload)
         {
-            const userId = req.user.id;
-
-            const updateFields = {};
-
-            if(payload.info.name)
+            if(payload.info)
             {
-                updateFields.name = payload.info.name
-            }
-
-            if(payload.info.username)
-            {
-                updateFields.username = payload.info.username
-            }
-
-            if(payload.info.gender)
-            {
-                updateFields.gender = payload.info.gender
-            }
-
-            if(payload.info.email)
-            {
-                updateFields.email = payload.info.email
-            }
-
-            if(payload.info.contact)
-            {
-                updateFields.contact = payload.info.contact
-            }
-
-            const updatedInfo = await User.findOneAndUpdate({_id: userId}, {
-                "$set": updateFields
-            }, {new: true})
+                const userId = req.user.id;
     
-            res.status(200).json({
-                user: {
-                    firstName: updatedInfo.firstName,
-                    lastName: updatedInfo.lastName,
-                    email: updatedInfo.email,
-                    role: updatedInfo.role,
-                    fullname: updatedInfo.fullname,
-                    _id: updatedInfo._id,
-                    gender: updatedInfo.gender ? updatedInfo.gender : "",
-                    contact: updatedInfo.contact ? updatedInfo.contact : ""
+                const updateFields = {};
+    
+                if(payload.info.name)
+                {
+                    updateFields.name = payload.info.name
                 }
-            })
+    
+                if(payload.info.username)
+                {
+                    updateFields.username = payload.info.username
+                }
+    
+                if(payload.info.gender)
+                {
+                    updateFields.gender = payload.info.gender
+                }
+    
+                if(payload.info.email)
+                {
+                    updateFields.email = payload.info.email
+                }
+    
+                if(payload.info.contact)
+                {
+                    updateFields.contact = payload.info.contact
+                }
+    
+                const updatedInfo = await User.findOneAndUpdate({_id: userId}, {
+                    "$set": updateFields
+                }, {new: true})
+        
+                res.status(200).json({
+                    user: {
+                        firstName: updatedInfo.firstName,
+                        lastName: updatedInfo.lastName,
+                        email: updatedInfo.email,
+                        role: updatedInfo.role,
+                        fullname: updatedInfo.fullname,
+                        _id: updatedInfo._id,
+                        gender: updatedInfo.gender ? updatedInfo.gender : "",
+                        contact: updatedInfo.contact ? updatedInfo.contact : ""
+                    }
+                })
+            }
         }
 
         else if(req.file)
         {
             const userId = req.user.id;
             const updateFields = {
-                profilePicture: `${process.env.PICURL}/public/${req.file.filename}`
+                profilePicture: `${req.file.filename}`
             };
 
             const updatedInfo = await User.findOneAndUpdate({_id: userId}, {
@@ -244,7 +248,7 @@ router.post('/user/update', fetchuser, userMiddleware, async (req, res) => {
     
         else
         {
-            return res.status(400).json({error: "Params required in address"})
+            return res.status(400).json({error: "Params required"})
         }
     }
     catch (error)

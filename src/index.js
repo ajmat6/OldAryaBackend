@@ -9,7 +9,8 @@ env.config();
 
 // Routes import:
 const userRoutes = require('./routes/auth');
-const notesRoutes = require('./routes/notes')
+const notesRoutes = require('./routes/notes');
+const itemRoutes = require('./routes/items');
 
 mongoose.connect(
     `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@cluster0.kfhqqjb.mongodb.net/?retryWrites=true&w=majority`,
@@ -28,6 +29,7 @@ app.use('/public', express.static(path.join(__dirname, 'uploads')))
 
 app.use('/oldarya', userRoutes);
 app.use('/oldarya', notesRoutes);
+app.use('/oldarya', itemRoutes);
 
 app.listen(process.env.PORT, () => {
     console.log(`Server running on port ${process.env.PORT}`)
