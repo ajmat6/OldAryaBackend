@@ -107,4 +107,43 @@ router.delete('/deleteItem/:id', fetchuser, userMiddleware, async (req, res) => 
     }
 })
 
+// update item:
+router.post('/item/update', fetchuser, userMiddleware, upload.array('itemImages'), async (req, res) => {
+    try
+    {
+        if(req.body)
+        {
+            const itemId = new mongoose.Types.ObjectId(req.body.id);
+            const updateFields = {};
+
+            if(req.body.itemName) updateFields.itemName = req.body.itemName;
+            if(req.body.description) updateFields.description = req.body.description;
+            if(req.body.itemType) updateFields.itemType = req.body.itemType;
+            if(req.body.question) updateFields.question = req.body.question;
+
+            if(req.files.length > 0)
+            {
+                let itemImages = [];
+                itemImages = req.files.map((image) => {
+                    return {img: image.filename}
+                })
+
+                updateFields.itemImages = itemImages
+            }
+
+            const item = await Items.findOneAndUpdate({_id: itemId}, {
+                "$set": updateFields
+            }, {new: true})
+
+            return res.status(200).json(item);
+        }
+        else return res.status(400).json({message: "No update fields provided"})
+    }
+    catch (error)
+    {
+        console.log(error.message);
+        res.status(500).send("Some Internal Server Error Occured! Please try again after some times");    
+    }
+})
+
 module.exports = router;
