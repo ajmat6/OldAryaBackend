@@ -44,6 +44,19 @@ const ItemSchema = new mongoose.Schema({
 
     itemImages: [
         {img: {type: String}}
+    ],
+
+    responses: [
+        {
+            resUserId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User'
+            },
+
+            response: {
+                type: String
+            }
+        }
     ]
 }, {timestamps: true})
 

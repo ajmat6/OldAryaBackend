@@ -39,7 +39,7 @@ router.post('/addItem', fetchuser, userMiddleware, upload.array('itemImages'), a
     catch (error)
     {
         console.log(error.message);
-        res.status(500).send("Some Internal Server Error Occured! Please try again after some times");    
+        res.status(500).send("Some Internal Server Error Occured! Please try again after some time");    
     }
 })
 
@@ -54,7 +54,7 @@ router.get('/getItems', fetchuser, userMiddleware, async (req, res) => {
     catch (error)
     {
         console.log(error.message);
-        res.status(500).send("Some Internal Server Error Occured! Please try again after some times");    
+        res.status(500).send("Some Internal Server Error Occured! Please try again after some time");    
     }
 })
 
@@ -69,7 +69,7 @@ router.get('/user/getItems', fetchuser, userMiddleware, async (req, res) => {
     catch (error)
     {
         console.log(error.message);
-        res.status(500).send("Some Internal Server Error Occured! Please try again after some times");    
+        res.status(500).send("Some Internal Server Error Occured! Please try again after some time");    
     }
 })
 
@@ -86,7 +86,7 @@ router.get('/getItem/:id', fetchuser, userMiddleware, async (req, res) => {
     catch (error)
     {
         console.log(error.message);
-        res.status(500).send("Some Internal Server Error Occured! Please try again after some times");    
+        res.status(500).send("Some Internal Server Error Occured! Please try again after some time");    
     }
 })
 
@@ -103,7 +103,7 @@ router.delete('/deleteItem/:id', fetchuser, userMiddleware, async (req, res) => 
     catch (error)
     {
         console.log(error.message);
-        res.status(500).send("Some Internal Server Error Occured! Please try again after some times");    
+        res.status(500).send("Some Internal Server Error Occured! Please try again after some time");    
     }
 })
 
@@ -121,6 +121,7 @@ router.post('/item/update', fetchuser, userMiddleware, upload.array('itemImages'
             if(req.body.itemType) updateFields.itemType = req.body.itemType;
             if(req.body.question) updateFields.question = req.body.question;
 
+            // if images are also there for edit in request body:
             if(req.files.length > 0)
             {
                 let itemImages = [];
@@ -137,12 +138,73 @@ router.post('/item/update', fetchuser, userMiddleware, upload.array('itemImages'
 
             return res.status(200).json(item);
         }
-        else return res.status(400).json({message: "No update fields provided"})
+
+        else return res.status(400).json({message: "No Update fields Provided"})
     }
     catch (error)
     {
         console.log(error.message);
-        res.status(500).send("Some Internal Server Error Occured! Please try again after some times");    
+        res.status(500).send("Some Internal Server Error Occured! Please try again after some time");    
+    }
+})
+
+// to add response of the user:
+router.post('/item/response/add', fetchuser, userMiddleware, async (req, res) => {
+    try
+    {
+        req.body.resUserId = req.user.id;
+        const id = new mongoose.Types.ObjectId(req.body.itemId);
+
+
+        const alreadyResponse = await Items.findOne({_id: id,"responses.resUserId": req.user.id})
+        if(alreadyResponse) return res.status(400).json({message: "You Have already given a Response, Delete previous to give new one!"});
+
+        else
+        {
+            const addResponse = await Items.findOneAndUpdate({_id: id}, {
+                "$push": {
+                    "responses": {
+                        resUserId: req.user.id,
+                        response: req.body.response
+                    },
+                }, 
+
+                "$set": {
+                    'itemStatus': "claimed"
+                }
+
+            }, {new: true})
+
+            console.log(addResponse)
+
+            return res.status(200).json(addResponse);
+        }
+    }
+    catch (error)
+    {
+        console.log(error.message);
+        res.status(500).send("Some Internal Server Error Occured! Please try again after some time");    
+    }
+})
+
+// to delete response:
+router.post('/item/response/delete', fetchuser, userMiddleware, async (req, res) => {
+    try
+    {
+        const deleteResponse = await Items.findOneAndUpdate({_id: req.body.itemId}, {
+            "$pull": {
+                responses: {_id: req.body.id}
+            }
+        }, {new: true});
+
+        if(deleteResponse) return res.status(200).json(deleteResponse);
+        else return res.status(400).json({message: "Oh Snap! Some Error Occured"})
+    }
+
+    catch (error)
+    {
+        console.log(error.message);
+        res.status(500).send("Some Internal Server Error Occured! Please try again after some time");    
     }
 })
 
