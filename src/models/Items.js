@@ -33,8 +33,8 @@ const ItemSchema = new mongoose.Schema({
 
     itemStatus: {
         type: String,
-        enum: ['reported', 'claimed', 'recovered'],
-        default: 'reported',
+        enum: ['Reported', 'Recovered'],
+        default: 'Reported',
     },
 
     date: {
@@ -55,6 +55,12 @@ const ItemSchema = new mongoose.Schema({
 
             response: {
                 type: String
+            },
+
+            status: {
+                type: String,
+                enum: ['Pending', 'Accepted', 'Rejected'],
+                default: 'Pending',
             }
         }
     ]

@@ -4,7 +4,7 @@ const Items = require('../models/Items');
 const { userMiddleware } = require('../middleware/userMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 const fetchuser = require('../middleware/fetchuser');
-const { default: mongoose } = require('mongoose');
+const { default: mongoose, trusted } = require('mongoose');
 
 router.post('/addItem', fetchuser, userMiddleware, upload.array('itemImages'), async (req, res) => {
     try
@@ -47,7 +47,7 @@ router.post('/addItem', fetchuser, userMiddleware, upload.array('itemImages'), a
 router.get('/getItems', fetchuser, userMiddleware, async (req, res) => {
     try
     {
-        const allItems = await Items.find({});
+        const allItems = await Items.find({}).populate("userId", "_id email contact");
         if(allItems) return res.status(200).json(allItems);
         else return res.status(400).json({message: "No Items!"});
     }
@@ -79,7 +79,7 @@ router.get('/getItem/:id', fetchuser, userMiddleware, async (req, res) => {
     {
         const {id} = req.params;
         const _id = new mongoose.Types.ObjectId(id)
-        const item = await Items.find({_id: _id})
+        const item = await Items.find({_id: _id}).populate("userId", "_id email contact");
         if(item) return res.status(200).json(item);
         else return res.status(400).json({message: "Oh! swap, something went wrong!"});
     }
@@ -169,9 +169,9 @@ router.post('/item/response/add', fetchuser, userMiddleware, async (req, res) =>
                     },
                 }, 
 
-                "$set": {
-                    'itemStatus': "claimed"
-                }
+                // "$set": {
+                //     'itemStatus': "Claimed"
+                // }
 
             }, {new: true})
 
@@ -201,6 +201,27 @@ router.post('/item/response/delete', fetchuser, userMiddleware, async (req, res)
         else return res.status(400).json({message: "Oh Snap! Some Error Occured"})
     }
 
+    catch (error)
+    {
+        console.log(error.message);
+        res.status(500).send("Some Internal Server Error Occured! Please try again after some time");    
+    }
+})
+
+// API for replying to a response:
+router.post('/item/response/reply', fetchuser, userMiddleware, async (req, res) => {
+    try
+    {
+        const findResponse = await Items.findOneAndUpdate({_id: req.body.itemId, "responses._id": req.body.responseId}, {
+            "$set": {
+                "responses.$.status": req.body.reply === 'yes' ? "Accepted" : "Rejected",
+                "itemStatus": req.body.reply === 'yes' ? "Recovered" : "Reported",
+            }
+        }, {new: true})
+
+        if(findResponse) return res.status(200).json(findResponse)
+        else return res.status(400).json({message: "Some Error Occured!"})
+    }
     catch (error)
     {
         console.log(error.message);
