@@ -8,6 +8,8 @@ const {body, validationResult} = require('express-validator'); // express valida
 const {validateSignupRequest, validateSigninRequest, isRequestValidated} = require('../validators/validate'); // importing validators
 const shortid = require('shortid');
 const { userMiddleware, adminMiddleware } = require('../middleware/userMiddleware.js');
+const { default: mongoose } = require('mongoose');
+const upload = require('../middleware/uploadMiddleware');
 
 // API end point for signup: POST Request -> to create an account:
 router.post('/signup', validateSignupRequest, isRequestValidated, async (req,res) => { /// using validateRequest(array) and isRequestValidated as midddleware defined in validators folder
@@ -58,7 +60,8 @@ router.post('/signup', validateSignupRequest, isRequestValidated, async (req,res
                 username,
                 email,
                 role: 'user',
-                _id: _user._id
+                _id: _user._id,
+                profilePic: ''
             }
         })
     }
@@ -116,7 +119,8 @@ router.post('/signin', validateSigninRequest, isRequestValidated, async (req,res
                 role,
                 _id,
                 gender: 'male',
-                contact: user.contact ? user.contact : ''
+                contact: user.contact ? user.contact : '',
+                profilePic: user.profilePicture ? user.profilePicture : '',
             }
         })
     }
@@ -162,86 +166,42 @@ router.post('/profile', fetchuser, async (req, res) => {
 })
 
 // API end point to update users info:
-router.post('/user/update', fetchuser, userMiddleware, async (req, res) => {
+router.post('/user/update', fetchuser, userMiddleware, upload.single('profilePicture'), async (req, res) => {
     try
     {
-        const {payload} = req.body;
-        console.log(req.body, req.file)
-        
-        if(payload)
+        if(req.body)
         {
-            if(payload.info)
-            {
-                const userId = req.user.id;
-    
-                const updateFields = {};
-    
-                if(payload.info.name)
-                {
-                    updateFields.name = payload.info.name
-                }
-    
-                if(payload.info.username)
-                {
-                    updateFields.username = payload.info.username
-                }
-    
-                if(payload.info.gender)
-                {
-                    updateFields.gender = payload.info.gender
-                }
-    
-                if(payload.info.email)
-                {
-                    updateFields.email = payload.info.email
-                }
-    
-                if(payload.info.contact)
-                {
-                    updateFields.contact = payload.info.contact
-                }
-    
-                const updatedInfo = await User.findOneAndUpdate({_id: userId}, {
-                    "$set": updateFields
-                }, {new: true})
-        
-                res.status(200).json({
-                    user: {
-                        firstName: updatedInfo.firstName,
-                        lastName: updatedInfo.lastName,
-                        email: updatedInfo.email,
-                        role: updatedInfo.role,
-                        fullname: updatedInfo.fullname,
-                        _id: updatedInfo._id,
-                        gender: updatedInfo.gender ? updatedInfo.gender : "",
-                        contact: updatedInfo.contact ? updatedInfo.contact : ""
-                    }
-                })
-            }
-        }
+            const userId = new mongoose.Types.ObjectId(req.user.id);
+            const updateFields = {};
 
-        else if(req.file)
-        {
-            const userId = req.user.id;
-            const updateFields = {
-                profilePicture: `${req.file.filename}`
-            };
+            if(req.body.name) updateFields.name = req.body.name;
+            if(req.body.username) updateFields.username = req.body.username;
+            if(req.body.gender) updateFields.gender = req.body.gender;
+            if(req.body.email) updateFields.email = req.body.email;
+            if(req.body.contact) updateFields.contact = req.body.contact;
+
+            // if images are also there for edit in request body:
+            if(req.file)
+            {
+                console.log(req.file)
+                updateFields.profilePicture = req.file.filename
+            }
 
             const updatedInfo = await User.findOneAndUpdate({_id: userId}, {
                 "$set": updateFields
             }, {new: true})
-
+        
+        
             res.status(200).json({
                 user: {
-                    firstName: updatedInfo.firstName,
-                    lastName: updatedInfo.lastName,
+                    name: updatedInfo.name,
+                    username: updatedInfo.username,
                     email: updatedInfo.email,
                     role: updatedInfo.role,
-                    fullname: updatedInfo.fullname,
                     _id: updatedInfo._id,
                     gender: updatedInfo.gender ? updatedInfo.gender : "",
                     contact: updatedInfo.contact ? updatedInfo.contact : "",
-                    profilePic: updateInfo.profilePicture
+                    profilePic: updatedInfo.profilePicture ? updatedInfo.profilePicture : ""
                 }
             })
         }
@@ -251,6 +211,7 @@ router.post('/user/update', fetchuser, userMiddleware, async (req, res) => {
             return res.status(400).json({error: "Params required"})
         }
     }
+
     catch (error)
     {
         console.log(error.message);
